@@ -205,6 +205,20 @@ export function Shop() {
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
         />
+        {searchTerm && (
+          <button
+            type="button"
+            className="search-clear-btn"
+            title="Clear search"
+            onClick={() => {
+              setSearchTerm('');
+              setActiveSearch('');
+              executeQuery(selectedCat, selectedSubcat, '', sortBy, minPrice, maxPrice);
+            }}
+          >
+            ✕
+          </button>
+        )}
 
         <div className="search-widget-divider" />
 
@@ -433,6 +447,7 @@ export function Product({ user }) {
   const { id } = useParams();
   const prod = useLoad(`/products/${id}`);
   const offers = useLoad(`/products/${id}/offers`);
+  const reviews = useLoad(`/products/${id}/reviews`);
   const [quantities, setQuantities] = useState({});
   const [msg, run, busy] = useAct();
 
@@ -465,6 +480,7 @@ export function Product({ user }) {
       )}
 
       {prod.data && (
+        <>
         <div className="product-detail-grid">
           {/* Left Column: Product Showcase */}
           <div className="product-detail-showcase">
@@ -618,6 +634,67 @@ export function Product({ user }) {
             </div>
           </div>
         </div>
+
+        {/* Customer Reviews Section (CH-04) */}
+        <div className="card" style={{ marginTop: 28, padding: '28px 32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+            <div>
+              <h3 style={{ margin: '0 0 4px', fontSize: '1.35rem' }}>Customer Ratings & Reviews</h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', margin: 0 }}>
+                Feedback from verified customers who purchased this item from marketplace sellers.
+              </p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <RatingStars rating={prod.data?.avg_rating} count={prod.data?.reviews} />
+            </div>
+          </div>
+
+          {reviews.loading ? (
+            <p style={{ color: 'var(--text-muted)' }}>Loading reviews...</p>
+          ) : !reviews.data?.length ? (
+            <div className="empty-state" style={{ padding: '24px 0', textAlign: 'center' }}>
+              <span style={{ fontSize: '2rem' }}>💬</span>
+              <h4 style={{ margin: '8px 0 4px' }}>No reviews yet for this product</h4>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', margin: 0 }}>
+                Only verified buyers who have received their delivery can submit ratings and feedback.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {reviews.data.map(r => (
+                <div
+                  key={r.review_id}
+                  style={{
+                    padding: '16px 20px',
+                    border: '1px solid var(--border-light)',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'var(--bg-surface-soft)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <RatingStars rating={r.rating} />
+                      <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{r.user_name || 'Verified Buyer'}</span>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      {new Date(r.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  {r.comment ? (
+                    <p style={{ margin: '6px 0 0', color: 'var(--text-secondary)', fontSize: '0.92rem', lineHeight: 1.6 }}>
+                      "{r.comment}"
+                    </p>
+                  ) : (
+                    <p style={{ margin: '6px 0 0', color: 'var(--text-muted)', fontSize: '0.82rem', fontStyle: 'italic' }}>
+                      Rating submitted without written comment.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        </>
       )}
     </div>
   );

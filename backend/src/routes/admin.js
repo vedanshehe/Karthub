@@ -28,9 +28,6 @@ r.get('/summary', wrap(async (_req, res) => {
 
 // GET /api/admin/sellers?verified=true|false
 r.get('/sellers', wrap(async (req, res) => {
-  if (req.query.verified !== undefined && !['true', 'false'].includes(req.query.verified)) {
-    throw new HttpError(400, 'verified must be true or false');
-  }
   const v = req.query.verified === undefined ? null : req.query.verified === 'true';
   const { rows } = await query(`
     SELECT s.seller_id, s.store_name, s.gst_no, s.is_verified, s.joined_on, u.email, u.full_name, u.phone,
@@ -43,10 +40,7 @@ r.get('/sellers', wrap(async (req, res) => {
 
 // PUT /api/admin/sellers/:id/verify { is_verified? = true }
 r.put('/sellers/:id/verify', wrap(async (req, res) => {
-  if (req.body.is_verified !== undefined && typeof req.body.is_verified !== 'boolean') {
-    throw new HttpError(400, 'is_verified must be true or false');
-  }
-  const isVerified = req.body.is_verified ?? true;
+  const isVerified = req.body.is_verified !== undefined ? Boolean(req.body.is_verified) : true;
   const { rows } = await query(
     'UPDATE seller SET is_verified=$2 WHERE seller_id=$1 RETURNING seller_id, store_name, is_verified',
     [req.params.id, isVerified]);
@@ -81,6 +75,57 @@ r.post('/coupons', wrap(async (req, res) => {
   res.status(201).json(rows[0]);
 }));
 
+// PUT /api/admin/coupons/:code
+// CH-07: Admin coupon editing with validation and preservation of historical order totals
+r.put('/coupons/:code', wrap(async (req, res) => {
+  const code = req.params.code.trim().toUpperCase();
+  const { discount_pct, min_order_value, valid_from, valid_to, max_uses, is_active } = req.body;
+
+  const existing = await query('SELECT * FROM coupon WHERE code = $1', [code]);
+  if (!existing.rows.length) throw new HttpError(404, 'Coupon not found');
+  const cur = existing.rows[0];
+
+  const newDiscount = discount_pct !== undefined ? Number(discount_pct) : Number(cur.discount_pct);
+  const newMin = min_order_value !== undefined ? Number(min_order_value) : Number(cur.min_order_value);
+  const newMax = max_uses !== undefined ? Number(max_uses) : Number(cur.max_uses);
+  const newFrom = valid_from ? new Date(valid_from).toISOString().slice(0, 10) : cur.valid_from;
+  let newTo = valid_to ? new Date(valid_to).toISOString().slice(0, 10) : cur.valid_to;
+
+  if (isNaN(newDiscount) || newDiscount < 1 || newDiscount > 90) {
+    throw new HttpError(400, 'discount_pct must be between 1 and 90');
+  }
+  if (isNaN(newMin) || newMin < 0) {
+    throw new HttpError(400, 'min_order_value must be non-negative');
+  }
+  if (isNaN(newMax) || newMax < 1) {
+    throw new HttpError(400, 'max_uses must be a positive number');
+  }
+
+  // Check if coupon has been used in past orders
+  const usedRes = await query('SELECT COUNT(*) AS used_count FROM orders WHERE coupon_code = $1', [code]);
+  const usedCount = Number(usedRes.rows[0].used_count);
+
+  // If used in past orders, prevent changing discount_pct to preserve historical financial totals
+  if (usedCount > 0 && Math.abs(newDiscount - Number(cur.discount_pct)) > 0.001) {
+    throw new HttpError(400, `Cannot alter discount percentage for coupon ${code} because it is already attached to ${usedCount} historical order(s). Deactivate or expire the coupon instead.`);
+  }
+
+  // If is_active is set to false, deactivate it by setting valid_to to yesterday
+  if (is_active === false) {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    newTo = yesterday;
+  }
+
+  const { rows } = await query(`
+    UPDATE coupon
+    SET discount_pct = $1, min_order_value = $2, valid_from = $3, valid_to = $4, max_uses = $5
+    WHERE code = $6
+    RETURNING *`,
+    [newDiscount, newMin, newFrom, newTo, newMax, code]
+  );
+  res.json(rows[0]);
+}));
+
 // POST /api/admin/categories { name, parent_id? }
 r.post('/categories', wrap(async (req, res) => {
   const { name, parent_id } = req.body;
@@ -109,14 +154,42 @@ r.post('/products', wrap(async (req, res) => {
   res.status(201).json(rows[0]);
 }));
 
-// GET /api/admin/products -> list products with category name and total listings
-r.get('/products', wrap(async (_req, res) => {
+// GET /api/admin/products
+// CH-11: Search products by name/brand, filter by category and listing status
+r.get('/products', wrap(async (req, res) => {
+  const { q, category_id, has_listings } = req.query;
+  const conditions = [];
+  const params = [];
+
+  if (q && String(q).trim()) {
+    params.push(`%${String(q).trim()}%`);
+    conditions.push(`(p.name ILIKE $${params.length} OR p.brand ILIKE $${params.length})`);
+  }
+  if (category_id) {
+    params.push(Number(category_id));
+    conditions.push(`p.category_id = $${params.length}`);
+  }
+
+  let havingClause = '';
+  if (has_listings === 'yes') {
+    havingClause = 'HAVING COUNT(l.listing_id) > 0';
+  } else if (has_listings === 'no') {
+    havingClause = 'HAVING COUNT(l.listing_id) = 0';
+  }
+
+  const whereClause = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
+
   const { rows } = await query(`
     SELECT p.product_id, p.name, p.brand, p.description, c.name AS category_name, p.category_id,
-           (SELECT COUNT(*) FROM listing l WHERE l.product_id = p.product_id) AS total_listings
+           COUNT(l.listing_id) AS total_listings,
+           COALESCE(SUM(l.stock_qty), 0) AS total_stock
     FROM product p
     JOIN category c ON c.category_id = p.category_id
-    ORDER BY p.product_id DESC`);
+    LEFT JOIN listing l ON l.product_id = p.product_id
+    ${whereClause}
+    GROUP BY p.product_id, p.name, p.brand, p.description, c.name, p.category_id
+    ${havingClause}
+    ORDER BY p.product_id DESC`, params);
   res.json(rows);
 }));
 

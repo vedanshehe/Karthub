@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { api } from '../api.js';
-import { useLoad, useAct, Msg, Money, FormattedDate, Badge, Modal, RatingStars, StarRatingSelector } from '../ui.jsx';
+import { useLoad, useAct, Msg, Money, FormattedDate, Badge, Modal, RatingStars, StarRatingSelector, OrderProgressStepper, SimulatedPaymentModal } from '../ui.jsx';
 
 export function Orders() {
   const { data, loading, err } = useLoad('/orders');
@@ -90,6 +90,9 @@ export function OrderDetail() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
 
+  // Retry simulated payment modal (CH-02)
+  const [isPayModalOpen, setIsPayModalOpen] = useState(false);
+
   const handleCancelItem = () => {
     if (!cancelModalItem) return;
     run(
@@ -158,6 +161,32 @@ export function OrderDetail() {
           <Badge status={data.payment_status} />
         </div>
       </div>
+
+      {/* Visual Order Lifecycle Progress Stepper (CH-03) */}
+      <OrderProgressStepper status={data.status} items={data.items} />
+
+      {/* Action Required: Payment Retry Banner (CH-02) */}
+      {(data.payment_status === 'FAILED' || (data.payment_status === 'PENDING' && data.method !== 'COD')) && data.status !== 'CANCELLED' && (
+        <div className="card" style={{ background: '#fffbeb', border: '1px solid #fde68a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14, marginBottom: 24 }}>
+          <div>
+            <div style={{ fontWeight: 700, color: '#92400e', fontSize: '1rem' }}>
+              ⚠️ Action Required: Payment {data.payment_status} ({data.method})
+            </div>
+            <div style={{ fontSize: '0.85rem', color: '#b45309', marginTop: 2 }}>
+              {data.payment_status === 'FAILED'
+                ? 'The simulated payment for this order was declined. Retry payment to complete your transaction.'
+                : 'Simulated online payment is pending confirmation. Complete payment to dispatch items.'}
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setIsPayModalOpen(true)}
+          >
+            Retry Payment Now 💳
+          </button>
+        </div>
+      )}
 
       <Msg m={msg} />
 
@@ -369,6 +398,25 @@ export function OrderDetail() {
           </div>
         </form>
       </Modal>
+
+      {/* Simulated Payment Modal (CH-02) */}
+      <SimulatedPaymentModal
+        isOpen={isPayModalOpen}
+        orderId={data.order_id}
+        amount={data.payable}
+        method={data.method}
+        onSuccess={() => {
+          setIsPayModalOpen(false);
+          reload();
+        }}
+        onFailure={() => {
+          reload();
+        }}
+        onClose={() => {
+          setIsPayModalOpen(false);
+          reload();
+        }}
+      />
     </div>
   );
 }

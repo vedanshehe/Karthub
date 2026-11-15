@@ -78,6 +78,60 @@ r.post('/checkout', wrap(async (req, res) => {
   }
 }));
 
+// POST /api/orders/:id/pay { method, simulate_status? }
+// CH-02: Simulated payment confirmation and retry handler
+r.post('/:id/pay', wrap(async (req, res) => {
+  const orderId = Number(req.params.id);
+  const { method, simulate_status = 'SUCCESS' } = req.body;
+
+  if (!Number.isInteger(orderId)) throw new HttpError(400, 'Invalid order id');
+  if (method && !METHODS.includes(method)) throw new HttpError(400, `method must be one of ${METHODS.join(', ')}`);
+
+  // Verify order ownership
+  const ordRes = await query('SELECT order_id, status FROM orders WHERE order_id = $1 AND user_id = $2', [orderId, req.user.id]);
+  if (!ordRes.rows.length) throw new HttpError(404, 'Order not found');
+  const ord = ordRes.rows[0];
+
+  if (ord.status === 'CANCELLED') {
+    throw new HttpError(409, 'Cannot pay for a cancelled order');
+  }
+
+  const payRes = await query('SELECT payment_id, method, amount, status FROM payment WHERE order_id = $1', [orderId]);
+  if (!payRes.rows.length) throw new HttpError(404, 'Payment record not found');
+  const pay = payRes.rows[0];
+
+  const chosenMethod = method || pay.method;
+
+  if (simulate_status === 'SUCCESS') {
+    await query(
+      `UPDATE payment SET status = 'SUCCESS', method = $1, paid_at = now() WHERE order_id = $2`,
+      [chosenMethod, orderId]
+    );
+    if (ord.status === 'PLACED') {
+      await query(`UPDATE orders SET status = 'PAID' WHERE order_id = $1`, [orderId]);
+    }
+    res.json({
+      order_id: orderId,
+      payment_status: 'SUCCESS',
+      method: chosenMethod,
+      amount: Number(pay.amount),
+      message: 'Simulated payment completed successfully. No real money was charged.'
+    });
+  } else {
+    await query(
+      `UPDATE payment SET status = 'FAILED', method = $1 WHERE order_id = $2 AND status <> 'SUCCESS'`,
+      [chosenMethod, orderId]
+    );
+    res.json({
+      order_id: orderId,
+      payment_status: 'FAILED',
+      method: chosenMethod,
+      amount: Number(pay.amount),
+      message: 'Simulated payment declined by mock gateway. You may retry.'
+    });
+  }
+}));
+
 // GET /api/orders -> user order history
 r.get('/', wrap(async (req, res) => {
   const { rows } = await query(`

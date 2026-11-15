@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { api } from '../api.js';
-import { useLoad, useAct, Msg, Money, Modal, QuantityStepper } from '../ui.jsx';
+import { useLoad, useAct, Msg, Money, Modal, QuantityStepper, SimulatedPaymentModal } from '../ui.jsx';
 
 export function Cart() {
   const nav = useNavigate();
@@ -15,6 +15,9 @@ export function Cart() {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponErr, setCouponErr] = useState('');
+
+  // Simulated Payment Modal state (CH-02)
+  const [pendingSimOrder, setPendingSimOrder] = useState(null);
 
   // Address modal states
   const [isAddrModalOpen, setIsAddrModalOpen] = useState(false);
@@ -77,11 +80,24 @@ export function Cart() {
     }
   };
 
+  const subtotal = Number(cart.data?.subtotal || 0);
+  const discountAmount = appliedCoupon ? Number(appliedCoupon.discount_amount || 0) : 0;
+  const estimatedPayable = Math.max(0, subtotal - discountAmount);
+
+  const hasOutOfStock = (cart.data?.items || []).some(it => Number(it.stock_qty) <= 0);
+  const hasExceedingStock = (cart.data?.items || []).some(it => Number(it.quantity) > Number(it.stock_qty));
+  const hasStockIssue = hasOutOfStock || hasExceedingStock;
+
   const handleCheckout = () => {
     if (!activeAddrId) {
       alert('Please select or add a delivery address first.');
       return;
     }
+    if (hasStockIssue) {
+      alert('Please resolve stock issues before checking out. Some items are out of stock or requested quantities exceed available inventory.');
+      return;
+    }
+
     run(async () => {
       const r = await api('/orders/checkout', {
         method: 'POST',
@@ -91,13 +107,18 @@ export function Cart() {
           coupon_code: appliedCoupon ? appliedCoupon.code : couponCode.trim() || undefined
         }
       });
-      nav('/orders/' + r.order_id);
-    }, 'Order placed successfully!');
-  };
 
-  const subtotal = Number(cart.data?.subtotal || 0);
-  const discountAmount = appliedCoupon ? Number(appliedCoupon.discount_amount || 0) : 0;
-  const estimatedPayable = Math.max(0, subtotal - discountAmount);
+      if (paymentMethod === 'COD') {
+        nav('/orders/' + r.order_id);
+      } else {
+        setPendingSimOrder({
+          order_id: r.order_id,
+          payable: r.payable,
+          method: paymentMethod
+        });
+      }
+    }, paymentMethod === 'COD' ? 'Order placed successfully via COD!' : 'Order created! Opening payment gateway...');
+  };
 
   return (
     <div>
@@ -153,8 +174,17 @@ export function Cart() {
                       <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                         Seller: <strong>{it.store_name}</strong> {it.brand ? `• Brand: ${it.brand}` : ''}
                       </div>
-                      <div style={{ marginTop: 4, fontWeight: 700, color: 'var(--text-secondary)' }}>
-                        <Money amount={it.price} /> <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>each</span>
+                      <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text-secondary)' }}>
+                          <Money amount={it.price} /> <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>each</span>
+                        </span>
+                        {it.stock_qty <= 0 ? (
+                          <span className="badge badge-danger">Out of stock</span>
+                        ) : it.quantity > it.stock_qty ? (
+                          <span className="badge badge-warning">Only {it.stock_qty} left</span>
+                        ) : (
+                          <span className="badge badge-success" style={{ fontSize: '0.72rem' }}>In Stock ({it.stock_qty})</span>
+                        )}
                       </div>
                     </div>
 
@@ -162,6 +192,7 @@ export function Cart() {
                       <QuantityStepper
                         value={it.quantity}
                         min={1}
+                        max={it.stock_qty > 0 ? it.stock_qty : 1}
                         onChange={newQty => updateQuantity(it, newQty)}
                         disabled={busy}
                       />
@@ -233,6 +264,12 @@ export function Cart() {
                     placeholder="e.g. WELCOME10"
                     value={couponCode}
                     onChange={e => setCouponCode(e.target.value.toUpperCase())}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
                     style={{ textTransform: 'uppercase', fontWeight: 600 }}
                   />
                   <button type="button" className="btn-secondary" onClick={handleApplyCoupon}>
@@ -327,15 +364,42 @@ export function Cart() {
               <button
                 type="button"
                 className="btn-primary"
-                disabled={busy || !activeAddrId}
+                disabled={busy || !activeAddrId || hasStockIssue}
                 onClick={handleCheckout}
                 style={{ width: '100%', padding: '14px', fontSize: '1.025rem', fontWeight: 800 }}
               >
-                {busy ? 'Processing Checkout...' : `Confirm & Place Order (₹${estimatedPayable.toFixed(2)})`}
+                {busy
+                  ? 'Processing Checkout...'
+                  : hasStockIssue
+                  ? 'Update Cart Stock to Proceed'
+                  : paymentMethod === 'COD'
+                  ? `Place COD Order (₹${estimatedPayable.toFixed(2)})`
+                  : `Proceed to Pay (₹${estimatedPayable.toFixed(2)})`}
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Simulated Payment Gateway Modal (CH-02) */}
+      {pendingSimOrder && (
+        <SimulatedPaymentModal
+          isOpen={Boolean(pendingSimOrder)}
+          orderId={pendingSimOrder.order_id}
+          amount={pendingSimOrder.payable}
+          method={pendingSimOrder.method}
+          onSuccess={() => {
+            const ordId = pendingSimOrder.order_id;
+            setPendingSimOrder(null);
+            nav('/orders/' + ordId);
+          }}
+          onFailure={() => {}}
+          onClose={() => {
+            const ordId = pendingSimOrder.order_id;
+            setPendingSimOrder(null);
+            nav('/orders/' + ordId);
+          }}
+        />
       )}
 
       {/* Add Address Modal */}

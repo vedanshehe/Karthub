@@ -105,6 +105,27 @@ export function Register({ onAuth }) {
 
   const handleRegister = (e) => {
     e.preventDefault();
+
+    // CH-06: General email syntax validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email.trim())) {
+      alert('Please enter a valid email address (e.g. user@domain.com or user@dept.univ.edu).');
+      return;
+    }
+
+    if (phone.trim() && !/^[0-9]{10}$/.test(phone.trim())) {
+      alert('Phone number must be exactly 10 digits.');
+      return;
+    }
+
+    if (isSeller) {
+      const cleanGst = gstNo.trim().toUpperCase();
+      if (cleanGst.length !== 15 || !/^[0-9A-Z]{15}$/.test(cleanGst)) {
+        alert('GST number must be exactly 15 alphanumeric characters.');
+        return;
+      }
+    }
+
     run(async () => {
       const body = {
         full_name: fullName.trim(),
@@ -224,10 +245,14 @@ export function Register({ onAuth }) {
                     type="text"
                     required={isSeller}
                     maxLength={15}
-                    placeholder="27ABCDE1234F1Z5"
+                    placeholder="29ABCDE1234F1Z5"
                     value={gstNo}
-                    onChange={e => setGstNo(e.target.value)}
+                    onChange={e => setGstNo(e.target.value.toUpperCase())}
+                    style={{ textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '0.05em' }}
                   />
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 4, lineHeight: 1.4 }}>
+                    Format: 15 alphanumeric characters (e.g. 29AAAAA0000A1Z5). For academic demonstration, any 15-character ID is accepted.
+                  </div>
                 </div>
               </div>
             )}

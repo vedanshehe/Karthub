@@ -21,6 +21,7 @@ r.get('/', wrap(async (req, res) => {
 }));
 
 // PUT /api/cart { listing_id, quantity }  -> add or set quantity (upsert on composite PK)
+// CH-01: Validates that requested quantity does not exceed available listing stock.
 r.put('/', wrap(async (req, res) => {
   if (typeof req.body.listing_id === 'boolean' || typeof req.body.quantity === 'boolean') {
     throw new HttpError(400, 'boolean values are not allowed for listing_id or quantity');
@@ -33,6 +34,19 @@ r.put('/', wrap(async (req, res) => {
   }
   if (!Number.isInteger(qty) || qty <= 0) {
     throw new HttpError(400, 'quantity must be a positive integer greater than zero');
+  }
+
+  // Check listing status
+  const lstRes = await query(
+    'SELECT listing_id, stock_qty, is_active FROM listing WHERE listing_id = $1',
+    [listingId]
+  );
+  if (!lstRes.rows.length) {
+    throw new HttpError(404, 'Listing not found');
+  }
+  const lst = lstRes.rows[0];
+  if (!lst.is_active) {
+    throw new HttpError(409, 'This listing is no longer active in the marketplace');
   }
 
   const { rows } = await query(`
