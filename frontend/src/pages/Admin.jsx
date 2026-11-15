@@ -13,6 +13,7 @@ export function Admin() {
 
   // Create coupon modal
   const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
+  const [editCoupon, setEditCoupon] = useState(null); // CH-07
   const [newCoupon, setNewCoupon] = useState({
     code: '',
     discount_pct: '10',
@@ -21,6 +22,60 @@ export function Admin() {
     valid_to: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10),
     max_uses: '100'
   });
+
+  // Admin catalogue search and filter states (CH-11)
+  const [prodSearch, setProdSearch] = useState('');
+  const [prodCategoryFilter, setProdCategoryFilter] = useState('');
+  const [prodHasListingsFilter, setProdHasListingsFilter] = useState('');
+  const [filteredAdminProds, setFilteredAdminProds] = useState(null);
+  const [filterLoading, setFilterLoading] = useState(false);
+
+  const fetchAdminProducts = (q, catId, hasListings) => {
+    setFilterLoading(true);
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (catId) params.set('category_id', catId);
+    if (hasListings) params.set('has_listings', hasListings);
+
+    api('/admin/products?' + params.toString())
+      .then(d => setFilteredAdminProds(d))
+      .catch(e => alert(e.message))
+      .finally(() => setFilterLoading(false));
+  };
+
+  const handleAdminProdSearch = (e) => {
+    if (e) e.preventDefault();
+    fetchAdminProducts(prodSearch.trim(), prodCategoryFilter, prodHasListingsFilter);
+  };
+
+  const handleResetAdminProdFilters = () => {
+    setProdSearch('');
+    setProdCategoryFilter('');
+    setProdHasListingsFilter('');
+    setFilteredAdminProds(null);
+    adminProds.reload();
+  };
+
+  const handleUpdateCoupon = (e) => {
+    e.preventDefault();
+    if (!editCoupon) return;
+    run(
+      () => api('/admin/coupons/' + editCoupon.code, {
+        method: 'PUT',
+        body: {
+          discount_pct: Number(editCoupon.discount_pct),
+          min_order_value: Number(editCoupon.min_order_value),
+          max_uses: Number(editCoupon.max_uses),
+          valid_from: editCoupon.valid_from,
+          valid_to: editCoupon.valid_to
+        }
+      }),
+      `Coupon "${editCoupon.code}" updated successfully!`
+    ).then(() => {
+      setEditCoupon(null);
+      coupons.reload();
+    }).catch(e => alert(e.message));
+  };
 
   // Create category modal
   const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -317,15 +372,31 @@ export function Admin() {
                           </span>
                         </td>
                         <td>
-                          <button
-                            type="button"
-                            className="btn-outline-danger btn-sm"
-                            disabled={busy}
-                            onClick={() => handleDeleteCoupon(c)}
-                            title="Delete coupon"
-                          >
-                            Delete
-                          </button>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button
+                              type="button"
+                              className="btn-secondary btn-sm"
+                              onClick={() => setEditCoupon({
+                                code: c.code,
+                                discount_pct: c.discount_pct,
+                                min_order_value: c.min_order_value,
+                                max_uses: c.max_uses,
+                                valid_from: c.valid_from ? new Date(c.valid_from).toISOString().slice(0, 10) : '',
+                                valid_to: c.valid_to ? new Date(c.valid_to).toISOString().slice(0, 10) : ''
+                              })}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-outline-danger btn-sm"
+                              disabled={busy}
+                              onClick={() => handleDeleteCoupon(c)}
+                              title="Delete coupon"
+                            >
+                              Delete
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -414,6 +485,85 @@ export function Admin() {
                 </button>
                 <button type="submit" className="btn-primary" disabled={busy}>
                   {busy ? 'Creating...' : 'Create Coupon'}
+                </button>
+              </div>
+            </form>
+          </Modal>
+
+          {/* Modal: Edit Coupon (CH-07) */}
+          <Modal
+            isOpen={Boolean(editCoupon)}
+            title={`Edit Coupon: ${editCoupon?.code}`}
+            onClose={() => setEditCoupon(null)}
+          >
+            <form onSubmit={handleUpdateCoupon}>
+              <div style={{ marginBottom: 12 }}>
+                <label>Coupon Code</label>
+                <input type="text" readOnly value={editCoupon?.code || ''} style={{ background: '#f8fafc', fontWeight: 700 }} />
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: 12 }}>
+                <div>
+                  <label>Discount Percentage (1-90%) *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="90"
+                    required
+                    value={editCoupon?.discount_pct || ''}
+                    onChange={e => setEditCoupon({ ...editCoupon, discount_pct: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label>Min Order Value (₹) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    value={editCoupon?.min_order_value || ''}
+                    onChange={e => setEditCoupon({ ...editCoupon, min_order_value: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid-2" style={{ marginBottom: 12 }}>
+                <div>
+                  <label>Valid From *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editCoupon?.valid_from || ''}
+                    onChange={e => setEditCoupon({ ...editCoupon, valid_from: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label>Valid To *</label>
+                  <input
+                    type="date"
+                    required
+                    value={editCoupon?.valid_to || ''}
+                    onChange={e => setEditCoupon({ ...editCoupon, valid_to: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label>Max Uses Allowed *</label>
+                <input
+                  type="number"
+                  min="1"
+                  required
+                  value={editCoupon?.max_uses || ''}
+                  onChange={e => setEditCoupon({ ...editCoupon, max_uses: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+                <button type="button" className="btn-secondary" onClick={() => setEditCoupon(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={busy}>
+                  {busy ? 'Saving...' : 'Save Coupon Changes'}
                 </button>
               </div>
             </form>
@@ -569,12 +719,70 @@ export function Admin() {
 
           {/* Manage Existing Products */}
           <div className="card">
-            <h3 style={{ marginTop: 0 }}>Catalogue Products ({adminProds.data?.length || 0})</h3>
+            <h3 style={{ marginTop: 0 }}>Catalogue Products ({(filteredAdminProds || adminProds.data)?.length || 0})</h3>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: -6 }}>
               Products can be deleted only if no seller listings are currently associated with them.
             </p>
-            {adminProds.loading ? (
+
+            {/* Search and Filters Bar (CH-11) */}
+            <form onSubmit={handleAdminProdSearch} style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18, background: 'var(--bg-muted)', padding: '12px 16px', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ flex: '1 1 200px' }}>
+                <input
+                  type="text"
+                  placeholder="Search by product name or brand..."
+                  value={prodSearch}
+                  onChange={e => setProdSearch(e.target.value)}
+                  style={{ margin: 0 }}
+                />
+              </div>
+              <div style={{ minWidth: 160 }}>
+                <select
+                  value={prodCategoryFilter}
+                  onChange={e => {
+                    setProdCategoryFilter(e.target.value);
+                    fetchAdminProducts(prodSearch.trim(), e.target.value, prodHasListingsFilter);
+                  }}
+                  style={{ margin: 0 }}
+                >
+                  <option value="">All Categories</option>
+                  {cats.data?.map(c => (
+                    <option key={c.category_id} value={c.category_id}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ minWidth: 150 }}>
+                <select
+                  value={prodHasListingsFilter}
+                  onChange={e => {
+                    setProdHasListingsFilter(e.target.value);
+                    fetchAdminProducts(prodSearch.trim(), prodCategoryFilter, e.target.value);
+                  }}
+                  style={{ margin: 0 }}
+                >
+                  <option value="">All Listing Status</option>
+                  <option value="yes">With Active Listings</option>
+                  <option value="no">Without Listings</option>
+                </select>
+              </div>
+              <button type="submit" className="btn btn-primary btn-sm" disabled={filterLoading}>
+                {filterLoading ? 'Searching...' : 'Search'}
+              </button>
+              {(prodSearch || prodCategoryFilter || prodHasListingsFilter) && (
+                <button type="button" className="btn btn-secondary btn-sm" onClick={handleResetAdminProdFilters}>
+                  Reset
+                </button>
+              )}
+            </form>
+
+            {adminProds.loading || filterLoading ? (
               <p>Loading products...</p>
+            ) : !(filteredAdminProds || adminProds.data)?.length ? (
+              <div className="empty-state" style={{ padding: '24px 0', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)' }}>No products match your catalogue filter criteria.</p>
+                <button type="button" className="btn btn-secondary btn-sm" onClick={handleResetAdminProdFilters}>
+                  Clear Filters
+                </button>
+              </div>
             ) : (
               <div className="table-responsive">
                 <table>
@@ -589,7 +797,7 @@ export function Admin() {
                     </tr>
                   </thead>
                   <tbody>
-                    {adminProds.data?.map(p => (
+                    {(filteredAdminProds || adminProds.data)?.map(p => (
                       <tr key={p.product_id}>
                         <td>#{p.product_id}</td>
                         <td><strong>{p.name}</strong></td>

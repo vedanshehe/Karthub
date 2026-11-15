@@ -23,7 +23,7 @@ r.get('/categories', wrap(async (_req, res) => {
 }));
 
 // GET /api/products?q=&category=&min=&max=&sort=price|rating&page=
-// One row per product with cheapest active in-stock offer, offer count and average rating.
+// CH-05: Supports full-text search as well as case-insensitive partial substring matching.
 r.get('/products', wrap(async (req, res) => {
   const { q, category, min, max, sort } = req.query;
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1), size = 20;
@@ -51,7 +51,10 @@ r.get('/products', wrap(async (req, res) => {
     JOIN category c ON c.category_id = p.category_id
     LEFT JOIN offers o ON o.product_id = p.product_id
     LEFT JOIN ratings r ON r.product_id = p.product_id
-    WHERE ($1::text IS NULL OR to_tsvector('english', p.name || ' ' || coalesce(p.brand,'')) @@ plainto_tsquery('english', $1))
+    WHERE ($1::text IS NULL
+           OR to_tsvector('english', p.name || ' ' || coalesce(p.brand,'')) @@ plainto_tsquery('english', $1)
+           OR p.name ILIKE '%' || $1 || '%'
+           OR coalesce(p.brand,'') ILIKE '%' || $1 || '%')
       AND ($2::int  IS NULL OR p.category_id IN (SELECT category_id FROM sub))
       AND ($3::numeric IS NULL OR o.best_price >= $3)
       AND ($4::numeric IS NULL OR o.best_price <= $4)
@@ -86,6 +89,22 @@ r.get('/products/:id/offers', wrap(async (req, res) => {
     FROM listing l JOIN seller s ON s.seller_id = l.seller_id
     WHERE l.product_id = $1 AND l.is_active
     ORDER BY l.price`, [req.params.id]);
+  res.json(rows);
+}));
+
+// GET /api/products/:id/reviews -> customer reviews for this product (CH-04)
+r.get('/products/:id/reviews', wrap(async (req, res) => {
+  const { rows } = await query(`
+    SELECT rv.review_id, rv.rating, rv.comment, rv.created_at,
+           u.full_name AS reviewer_name, s.store_name
+    FROM review rv
+    JOIN order_item oi ON (oi.order_id, oi.item_no) = (rv.order_id, rv.item_no)
+    JOIN listing l ON l.listing_id = oi.listing_id
+    JOIN orders o ON o.order_id = oi.order_id
+    JOIN app_user u ON u.user_id = o.user_id
+    JOIN seller s ON s.seller_id = l.seller_id
+    WHERE l.product_id = $1
+    ORDER BY rv.created_at DESC`, [req.params.id]);
   res.json(rows);
 }));
 
