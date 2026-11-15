@@ -10,7 +10,7 @@
 - Prashant Kadam (2024A3PS0411H)  
 
 **Repository:** [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)  
-**Final Submission Commit:** `00c47ba` (Tag: `final`)  
+**Final Submission Commit:** Git Tag: `final`  
 
 ---
 

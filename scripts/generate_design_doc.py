@@ -166,7 +166,7 @@ def build_pdf(filename="Database_Design_Document.pdf"):
     story.append(Paragraph("KartHub: Multi-Vendor E-Commerce Marketplace", title_style))
     story.append(Paragraph("<b>Database Design Document & Architectural Specification</b> · CS F212 Database Systems · Team 24<br/>"
                            "<b>Authors:</b> Vedansh Singh (2024A3PS0432H), Yashavanth (2024A7PS0006H), Rashi Tripathi (2024A3PS0412H), Prashant Kadam (2024A3PS0411H)<br/>"
-                           "<b>Repository:</b> https://github.com/vedanshehe/Karthub.git · <b>Commit:</b> 00c47ba (Tag: <code>final</code>)", sub_style))
+                           "<b>Repository:</b> https://github.com/vedanshehe/Karthub.git · <b>Git Tag:</b> <code>final</code>", sub_style))
     story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor('#0f766e'), spaceAfter=6))
 
     story.append(Paragraph("1. Executive Summary & Problem Statement", h1_style))

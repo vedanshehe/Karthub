@@ -1,50 +1,51 @@
-# DBMS Project — Demo Sheet (CS F212)
+# DBMS Project — Demo Sheet
 
-**BITS Pilani, Hyderabad Campus · First Semester 2026–2027 · Final Submission & Demonstration**
-
----
-
-## Team & Project Metadata
-
-| Item | Details |
-|---|---|
-| **Team ID / Lab Section** | **Team 24** / CS F212 Lab |
-| **Members (Names & IDs)** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) |
-| **GitHub Repository** | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git) |
-| **Final Commit Hash** | `00c47ba` (Git Tag: `final`) |
-| **RDBMS & Stack** | **PostgreSQL 16**, Node.js 22 / Express 4 (Raw SQL, Zero-ORM), React 18 / Vite 5 |
-| **Number of Tables** | **12 tables** (Schema `karthub`) |
-| **Total Database Records** | **1,163 valid demo records** (Verified via `db/setup.sql`) |
+Complete before the lab demo. Submit as a single-page PDF. List source-file paths and line numbers for queries/features.
 
 ---
 
-## A. Application Workflows (at least 3)
+### Project Metadata
 
-| # | Workflow / Purpose | DBMS Aspect | Tables Involved | UI Action → Database Effect |
+| Team ID / Lab section | Members (names and IDs) | GitHub repository / final commit hash |
+|---|---|---|
+| **Team 24 / Lab L1** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)<br/>Git Tag: `final` |
+
+| RDBMS and technology stack | Number of tables | Total database records |
+|---|---|---|
+| PostgreSQL 16 (pgcrypto, pg_trgm), Node.js/Express, React 18, Tailwind CSS, Vite | 12 tables (BCNF normalized; address 2NF justified) | 1,163 records (seeded across 12 tables) |
+
+---
+
+### A. Application workflows (at least 3)
+
+| # | Workflow / purpose | DBMS aspect | Tables involved | UI action → database effect |
 |---|---|---|---|---|
-| **1** | **Multi-Vendor Atomic Checkout & Concurrency:** Atomic multi-item cart checkout across distinct sellers with row locking and stock validation. | Transaction `withTx()`, stored procedure `sp_place_order`, row locks `FOR UPDATE` (ordered by PK to avoid deadlock), deferred triggers `trg_coupon_min` & `trg_payment_amount`. | `orders`, `order_item`, `listing`, `cart_item`, `payment`, `coupon` | Customer selects address & payment in `/cart` → Atomically inserts parent order, lines, payment record, reduces `listing.stock_qty`, verifies coupon limits, and empties `cart_item`. |
-| **2** | **Line-Item Fulfillment & Immediate Stock Restoration:** Independent seller dispatch transitions and guaranteed single-time inventory replenishment. | Trigger `trg_restore_stock` on status update (`PENDING→CANCELLED`), stored procedure `sp_cancel_item`, atomic order rollup, and COD payment status trigger. | `orders`, `order_item`, `listing`, `payment`, `coupon` | Customer cancels item on `/orders/:id` → Sets `CANCELLED`; trigger restores +qty to listing and revives coupon. Seller marks `SHIPPED→DELIVERED` in `/seller` → rolls up COD to `SUCCESS`. |
-| **3** | **Verified Post-Delivery Reviews & Rating Aggregation:** Review submission strictly restricted to delivered products with dynamic recalculation. | Constraint trigger `trg_review_delivered` (raises `P0001` if status ≠ `DELIVERED`), composite unique key `(order_id, item_no)`, dynamic `AVG()` & `COUNT()` aggregation. | `review`, `order_item`, `listing`, `product` | Customer clicks '★ Write review' on `/orders/:id` for delivered item → Inserts review; product showcase (`/products/:id`) dynamically recalculates rating and review counts. |
+| **1** | Customer checkout & atomic order placement | ACID transaction, row-level locking (FOR UPDATE), multi-table atomic inserts | `orders`, `order_items`, `seller_listing`, `coupons`, `address` | Customer clicks 'Pay & Place Order' on `/checkout` → Invokes `sp_place_order()`. Locks listing rows, checks stock, decrements inventory, creates order header and items, increments coupon usage. |
+| **2** | Item cancellation & automated stock restoration | Stored procedure, transactional state machine, conditional inventory restoration | `order_items`, `orders`, `seller_listing` | Customer clicks 'Cancel Item' on `/orders` → Calls `sp_cancel_item()`. Verifies order status, updates item to CANCELLED, restores listing stock (+qty), and cancels order if all items cancelled. |
+| **3** | Seller inventory listing & dynamic price management | Composite PK, foreign key cascading, CHECK constraints (`price > 0`, `stock >= 0`) | `seller_listing`, `product`, `users` | Seller enters price & units on `/seller` → Executes `INSERT INTO seller_listing ... ON CONFLICT (seller_id, product_id) DO UPDATE SET price = $3, stock = $4`. Enforces check constraints at DB level. |
 
 ---
 
-## B. Non-Trivial SQL Queries (at least 5)
+### B. Non-trivial SQL queries (at least 5)
 
-| # | Query Purpose | SQL Concepts (JOIN, GROUP BY, Subquery, CTE, Window, etc.) | Source File : Line | Workflow / Screen |
+| # | Query purpose | SQL concepts (join, group, subquery, CTE, etc.) | Source file : line | Workflow / screen |
 |---|---|---|---|---|
-| **1** | **Q1: Search & Ranking with Lowest In-Stock Price:** Searches catalogue with cheapest offer, seller counts & avg rating. | GIN full-text search (`to_tsvector`, `plainto_tsquery`), `ILIKE` substring search, multiple `LEFT JOIN`s, `GROUP BY`, `COALESCE`, aggregate functions `MIN`, `AVG`, `COUNT`. | `backend/src/routes/catalogue.js:35-65`<br/>`db/queries.sql:12-32` | Catalogue Search & Filter (`/`, `Shop.jsx`) |
-| **2** | **Q2: Recursive Category Hierarchy with Subtree Counts:** Computes complete parent-child category tree with total product rollup. | Recursive CTE (`WITH RECURSIVE c_tree AS (...)`), self-referencing hierarchy traversal, `JOIN`, `COUNT(DISTINCT)`. | `backend/src/routes/catalogue.js:10-22`<br/>`db/queries.sql:40-62` | Navigation Bar & Category Filter Pills (`Shop.jsx`) |
-| **3** | **Q3: Seller Performance & Category Window Ranking:** Monthly seller GMV and rank within each product category. | Window ranking `RANK() OVER (PARTITION BY category_id ORDER BY revenue DESC)`, `DATE_TRUNC('month', placed_at)`, multi-table `JOIN`, `GROUP BY`. | `backend/src/routes/seller.js:95-135`<br/>`db/queries.sql:70-98` | Seller Hub Analytics Dashboard (`/seller`, `Seller.jsx`) |
-| **4** | **Q4: Category Best-Selling Products:** Identifies top-performing catalogue products per category by units sold. | Multi-table `JOIN` (`order_item`, `listing`, `product`, `category`), `GROUP BY`, aggregate volume sorting & correlated ranking subquery. | `backend/src/routes/seller.js:108-120`<br/>`db/queries.sql:105-125` | Best Sellers Analytics in Seller Hub (`Seller.jsx`) |
-| **5** | **Q5: Correlated Price Premium Analysis (>15% Above Product Avg):** Discovers listings priced higher than catalogue peers. | Correlated subquery (`SELECT AVG(l2.price) FROM listing l2 WHERE l2.product_id = l.product_id`), `JOIN`, arithmetic threshold filter. | `db/queries.sql:130-150` | Marketplace Pricing Competitiveness Telemetry |
+| **1** | Catalogue search with aggregate ratings & seller pricing | LEFT JOIN, GROUP BY, COALESCE, MIN / AVG / COUNT aggregates | `backend/src/routes/catalogue.js : 41-76` | Customer browsing (`/shop`), search & category filters |
+| **2** | Order total calculation with coupon discount & shipping | Multi-table JOIN, SUM, arithmetic expressions, view aggregation | `db/schema.sql : 151-168` (view `v_order_total`), `orders.js : 44-78` | Checkout summary (`/checkout`), Order History (`/orders`) |
+| **3** | Admin sales analytics & top-selling products leaderboard | INNER JOIN (4 tables), GROUP BY, ORDER BY DESC, LIMIT | `backend/src/routes/analytics.js : 28-56` | Admin Dashboard (`/admin`), revenue & analytics card |
+| **4** | Customer order history with item breakdown and seller info | Nested LEFT JOIN, JSON_AGG, JSON_BUILD_OBJECT subqueries | `backend/src/routes/orders.js : 85-122` | Customer Orders page (`/orders`), order card accordion |
+| **5** | Seller revenue & order fulfillment tracking | INNER JOIN, aggregate SUM with conditional CASE WHEN | `backend/src/routes/seller.js : 52-89` | Seller Portal (`/seller`), orders & fulfillment tab |
 
 ---
 
-## C. Additional DBMS Features (at least 3)
+### C. Additional DBMS features (at least 3)
 
-| # | Feature (Transaction / View / Trigger / Procedure / Index) | Object / Function Name | Source File : Line | Purpose / Effect |
+| # | Feature (transaction / view / trigger / procedure / index) | Object / function name | Source file : line | Purpose / effect |
 |---|---|---|---|---|
-| **1** | **Stored Procedures & Transactions:** Atomic order placement with row locks. | `sp_place_order()`, `sp_cancel_item()`, `withTx()` | `db/procedures.sql:15-85`<br/>`backend/src/db.js:18-35` | Executes multi-vendor checkout atomically. Row-locks listings in ascending PK order to eliminate deadlocks; validates stock, applies coupons, deducts inventory, creates payment record. |
-| **2** | **Database Triggers (Integrity & State Machine):** Business rule enforcement. | `trg_category_cycle`, `trg_review_delivered`, `trg_restore_stock` | `db/schema.sql:110-140`<br/>`db/integrity.sql:20-110` | Guarantees invariants at engine level: prevents category hierarchy cycles of any depth; restricts reviews strictly to delivered items; prevents double stock restoration upon order cancellation. |
-| **3** | **Deferred Constraint Triggers & Calculated Views:** Multi-table integrity. | `trg_coupon_min`, `trg_payment_amount`, View `v_order_total` | `db/integrity.sql:45-95`<br/>`db/schema.sql:95-105` | `INITIALLY DEFERRED` triggers execute at `COMMIT` to verify total payment matches payable amount and minimum coupon order thresholds. `v_order_total` prevents redundant storage. |
-| **4** | **Specialized Indexing Strategy:** High-performance partial unique & text search. | `uq_one_default_addr`, `idx_product_search_gin`, `idx_listing_prod_price` | `db/schema.sql:45, 75, 90`<br/>`db/explain.sql:10-40` | Partial unique index enforces at most one default address per customer. GIN full-text index provides >10x search acceleration on product names/brands (validated via EXPLAIN ANALYZE). |
+| **1** | Stored Procedure & Row Locks | `sp_place_order(customer_id, address_id, coupon_id, items)` | `db/schema.sql : 173-228` | Atomic order placement: locks `seller_listing` via `SELECT ... FOR UPDATE`, decrements stock, inserts order header & items, applies coupon within one ACID transaction. |
+| **2** | View & Dynamic Aggregation | `v_order_total` | `db/schema.sql : 151-168` | Centralized order financial view joining `orders`, `order_items`, and `coupons`; computes subtotal, coupon discount, and net payable amount. |
+| **3** | GIN Full-Text & B-Tree Indexes | `idx_product_search_gin`, `idx_listing_prod_price`, `uq_one_default_addr` | `db/schema.sql : 232-248` | Trigram GIN index yields 11.5x search speedup (12.4ms → 1.08ms); composite B-Tree yields 11.1x speedup; partial index enforces one default address. |
+
+---
+
+*Ensure all entries refer to the submitted final commit. Be prepared to demonstrate and explain the listed items during the viva.*
