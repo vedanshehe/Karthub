@@ -674,7 +674,7 @@ export function Product({ user }) {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <RatingStars rating={r.rating} />
-                      <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{r.user_name || 'Verified Buyer'}</span>
+                      <span style={{ fontWeight: 600, fontSize: '0.92rem' }}>{r.reviewer_name || r.user_name || 'Verified Buyer'}</span>
                     </div>
                     <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                       {new Date(r.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}

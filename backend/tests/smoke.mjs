@@ -145,6 +145,9 @@ const ck = await call('POST', '/orders/checkout', W, { address_id: WA, payment_m
 check('COD checkout works', ck.status === 201 && ck.body.payment_status === 'PENDING', JSON.stringify(ck.body));
 const o2 = ck.body.order_id;
 
+const simPay = await call('POST', `/orders/${o2}/pay`, W, { method: 'UPI', simulate_status: 'SUCCESS' });
+check('simulated pay works', simPay.status === 200 && simPay.body.payment_status === 'SUCCESS');
+
 const badRating = await call('POST', '/reviews', W, { order_id: o2, item_no: 1, rating: 6 });
 check('rating > 5 rejected (400)', badRating.status === 400);
 
@@ -178,6 +181,9 @@ check('author deletes review (204)', delRev.status === 204);
 
 const reRev = await call('POST', '/reviews', W, { order_id: o2, item_no: 1, rating: 4, comment: 'Re-reviewed' });
 check('re-review after deletion succeeds (201)', reRev.status === 201);
+
+const prodRevs = await call('GET', `/products/${PID}/reviews`);
+check('product reviews list works', prodRevs.status === 200 && Array.isArray(prodRevs.body) && prodRevs.body.length > 0);
 
 // --- Address Deletion
 const extraAddr = await addr(c1);
@@ -214,6 +220,9 @@ if (process.env.ADMIN_EMAIL) {
     code: `T${sfx}`.slice(0, 20), discount_pct: 10, valid_from: '2020-01-01', valid_to: '2099-01-01', max_uses: 1
   });
   check('admin creates coupon', cp.status === 201, JSON.stringify(cp.body));
+
+  const editCp = await call('PUT', `/admin/coupons/${cp.body.code}`, ad, { min_order_value: 300, max_uses: 20 });
+  check('admin edits coupon', editCp.status === 200 && editCp.body.max_uses === 20);
 
   const delCp = await call('DELETE', `/admin/coupons/${cp.body.code}`, ad);
   check('admin deletes unused coupon (200)', delCp.status === 200);

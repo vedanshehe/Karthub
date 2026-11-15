@@ -96,7 +96,7 @@ r.get('/products/:id/offers', wrap(async (req, res) => {
 r.get('/products/:id/reviews', wrap(async (req, res) => {
   const { rows } = await query(`
     SELECT rv.review_id, rv.rating, rv.comment, rv.created_at,
-           u.full_name AS reviewer_name, s.store_name
+           u.full_name AS reviewer_name, u.full_name AS user_name, s.store_name
     FROM review rv
     JOIN order_item oi ON (oi.order_id, oi.item_no) = (rv.order_id, rv.item_no)
     JOIN listing l ON l.listing_id = oi.listing_id

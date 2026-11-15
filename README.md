@@ -188,15 +188,15 @@ All pre-seeded demo accounts share the password **`secret1`**.
 
 ## Comprehensive Test Suites
 
-KartHub includes **785 automated test checks** across four dedicated suites verifying every layer of database integrity, API contract adherence, drain-to-empty edge cases, and concurrency resilience.
+KartHub includes **788 automated test checks** across four dedicated suites verifying every layer of database integrity, API contract adherence, drain-to-empty edge cases, and concurrency resilience.
 
 | Test Suite | File Location | Check Count | Execution Command | Result |
 |---|---|:---:|---|:---:|
 | **Database Integrity** | `db/tests.sql` | **57** | `psql -U postgres -d karthub -P pager=off -f db/tests.sql` | **57 Passed, 0 Failed** |
-| **API Smoke & Lifecycle** | `backend/tests/smoke.mjs` | **56** | `npm test` *(in `backend/` with admin credentials)* | **56 Passed, 0 Failed** |
+| **API Smoke & Lifecycle** | `backend/tests/smoke.mjs` | **59** | `npm test` *(in `backend/` with admin credentials)* | **59 Passed, 0 Failed** |
 | **Drain-to-Empty & Edge Cases** | `backend/tests/edge_cases.mjs` | **68** | `npm run test:edge` *(in `backend/`)* | **68 Passed, 0 Failed** |
 | **Extensive Stress & Fuzzing (600+)** | `backend/tests/stress_edge_cases_600.mjs` | **604** | `npm run test:stress` *(in `backend/`)* | **604 Passed, 0 Failed** |
-| **TOTAL** | | **785** | `npm run test:all` *(runs all 3 Node suites)* | **All Checks Passed** |
+| **TOTAL** | | **788** | `npm run test:all` *(runs all 3 Node suites)* | **All Checks Passed** |
 
 ### Running the 600+ Edge Cases Suite
 ```bash
@@ -277,6 +277,7 @@ Base URL: `http://localhost:4000/api`. Detailed documentation available in **[`d
 | **Catalogue** | `GET /categories` | Public | Fetch recursive category tree with counts |
 | | `GET /products` | Public | Search products with min price & rating |
 | | `GET /products/:id/offers` | Public | Compare competing seller listings for a product |
+| | `GET /products/:id/reviews` | Public | Fetch customer reviews and ratings for a product |
 | **Cart** | `GET /cart` | Customer | Fetch cart items, live prices, and subtotal |
 | | `PUT /cart` | Customer | Add or update listing quantity |
 | | `DELETE /cart/:listingId` | Customer | Remove specific listing from cart |
@@ -287,6 +288,7 @@ Base URL: `http://localhost:4000/api`. Detailed documentation available in **[`d
 | **Orders** | `POST /orders/checkout` | Customer | Atomic checkout via `sp_place_order` |
 | | `GET /orders` | Customer | View customer order history |
 | | `GET /orders/:id` | Customer | View detailed order lines and payment status |
+| | `POST /orders/:id/pay` | Customer | Simulate payment outcome or retry payment |
 | | `POST /orders/:id/items/:n/cancel` | Customer | Cancel line item via `sp_cancel_item` |
 | **Reviews** | `POST /reviews` | Customer | Post 1–5 star review for delivered item |
 | | `DELETE /reviews/:id` | Customer | Delete review and recalculate rating |
@@ -302,6 +304,7 @@ Base URL: `http://localhost:4000/api`. Detailed documentation available in **[`d
 | | `PUT /admin/sellers/:id/verify` | Admin | Toggle seller verified badge |
 | | `GET /admin/coupons` | Admin | List active and historical coupons |
 | | `POST /admin/coupons` | Admin | Create new promotional coupon |
+| | `PUT /admin/coupons/:code` | Admin | Edit coupon discounts, validity, and limits |
 | | `DELETE /admin/coupons/:code` | Admin | Delete unused coupon (`FK RESTRICT` if used) |
 | | `POST /admin/categories` | Admin | Add category (cycle checked) |
 | | `DELETE /admin/categories/:id` | Admin | Delete empty category (`FK RESTRICT` if products) |

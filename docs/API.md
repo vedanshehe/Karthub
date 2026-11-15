@@ -175,6 +175,23 @@ Lists competitive price offers across all sellers for a single product.
   ]
   ```
 
+### `GET /products/:id/reviews`
+Retrieves customer reviews and ratings for a product.
+- **Access**: Public
+- **Response (200 OK)**:
+  ```json
+  [
+    {
+      "review_id": 4,
+      "rating": 5,
+      "comment": "Outstanding product build quality.",
+      "created_at": "2026-11-14T10:00:00.000Z",
+      "reviewer_name": "Customer 1",
+      "store_name": "Store 1"
+    }
+  ]
+  ```
+
 ---
 
 ## 4. Shopping Cart Routes (`/api/cart`)
@@ -342,6 +359,27 @@ Cancels a PENDING order line via PostgreSQL stored procedure `sp_cancel_item`.
   }
   ```
 
+### `POST /orders/:id/pay`
+Simulates a payment outcome (`SUCCESS` or `FAILED`) with simulated gateway processing. Updates payment record and sets `orders.status = 'PAID'` upon success.
+- **Access**: Protected (Customer - Own order)
+- **Request Body**:
+  ```json
+  {
+    "method": "UPI",
+    "simulate_status": "SUCCESS"
+  }
+  ```
+- **Response (200 OK)**:
+  ```json
+  {
+    "order_id": 151,
+    "payment_status": "SUCCESS",
+    "method": "UPI",
+    "amount": 500,
+    "message": "Simulated payment completed successfully. No real money was charged."
+  }
+  ```
+
 ---
 
 ## 6. Review Routes (`/api/reviews`)
@@ -442,10 +480,11 @@ Returns seller KPI cards, monthly revenue, best-selling products, low-stock aler
 - `PUT /admin/sellers/:id/verify`: Toggles seller `is_verified` `{ is_verified: true | false }`.
 - `GET /admin/coupons`: Lists promotional coupons and current usage counts.
 - `POST /admin/coupons`: Creates a coupon `{ code, discount_pct, min_order_value, valid_from, valid_to, max_uses }`.
+- `PUT /admin/coupons/:code`: Edits coupon attributes `{ discount_pct?, min_order_value?, valid_from?, valid_to?, max_uses?, is_active? }`. Rejects discount percentage changes if the coupon was already used in historical orders.
 - `DELETE /admin/coupons/:code`: Deletes unused coupon (200 OK). Blocked with 409 Conflict if historical orders reference it.
 - `POST /admin/categories`: Adds category to catalogue `{ name, parent_id? }` (cycle checked by `trg_category_cycle`).
 - `DELETE /admin/categories/:id`: Deletes empty category (200 OK). Blocked with 409 Conflict if category contains products.
-- `GET /admin/products`: Lists catalogue products with category name and total listings count.
+- `GET /admin/products`: Lists catalogue products with category name and total listings count. Supports query filters `?q=<name_or_brand>&category_id=<id>&has_listings=yes|no`.
 - `POST /admin/products`: Adds new product to shared catalogue `{ category_id, name, brand?, description? }`.
 - `DELETE /admin/products/:id`: Deletes unlisted product (200 OK). Blocked with 409 Conflict if active or past listings reference it.
 
