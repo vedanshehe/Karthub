@@ -15,7 +15,7 @@ def fill_doc(path):
     t0 = doc.tables[0]
     set_cell(t0.cell(1, 0), "Team 24 / Lab L1", font_size=8.0)
     set_cell(t0.cell(1, 1), "Vedansh Singh (2024A3PS0432H)\nYashavanth (2024A7PS0006H)\nRashi Tripathi (2024A3PS0412H)\nPrashant Kadam (2024A3PS0411H)", font_size=7.5)
-    set_cell(t0.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: eee4cff | Git Tag: final", font_size=7.5)
+    set_cell(t0.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: be60a03 | Git Tag: final", font_size=7.5)
 
     # Table 1: Metadata 2
     t1 = doc.tables[1]
