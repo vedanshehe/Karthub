@@ -94,8 +94,9 @@ export function Shop() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState('');
 
-  // Root categories (filtering out any temporary smoke test categories)
-  const rootCats = (cats.data || []).filter(c => !c.parent_id && !c.name.startsWith('TestCat'));
+  // Root categories (filtering out any temporary test/fuzz categories e.g. S3Cat, EdgeCat, TestCat)
+  const isTestCat = (name) => /^(Test|Edge|S3|Temp)/i.test(name || '');
+  const rootCats = (cats.data || []).filter(c => !c.parent_id && !isTestCat(c.name));
 
   // Determine if we are in the default "Curated Collections" overview
   const isCuratedOverview = !selectedCat && !selectedSubcat && !activeSearch && !minPrice && !maxPrice;
@@ -182,7 +183,7 @@ export function Shop() {
 
   // Subcategories for the selected root category
   const currentRoot = rootCats.find(c => String(c.category_id) === String(selectedCat));
-  const currentSubcats = (cats.data || []).filter(c => String(c.parent_id) === String(selectedCat));
+  const currentSubcats = (cats.data || []).filter(c => String(c.parent_id) === String(selectedCat) && !isTestCat(c.name));
 
   return (
     <div>
