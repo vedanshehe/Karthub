@@ -14,7 +14,7 @@ def fill_doc(path):
         t_meta = doc.tables[0]
         set_cell(t_meta.cell(1, 0), "Team 24 / Lab L1", font_size=8.0)
         set_cell(t_meta.cell(1, 1), "Vedansh Singh (2024A3PS0432H)\nYashavanth (2024A7PS0006H)\nRashi Tripathi (2024A3PS0412H)\nPrashant Kadam (2024A3PS0411H)", font_size=7.5)
-        set_cell(t_meta.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: cc10e8c | Git Tag: final", font_size=7.5)
+        set_cell(t_meta.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: 438ecb4 | Git Tag: final", font_size=7.5)
         set_cell(t_meta.cell(3, 0), "PostgreSQL 16 (pgcrypto, pg_trgm), Node.js/Express, React 18, Tailwind CSS, Vite", font_size=7.5)
         set_cell(t_meta.cell(3, 1), "12 tables (BCNF normalized; address 2NF justified)", font_size=7.5)
         set_cell(t_meta.cell(3, 2), "1,163 records (seeded across 12 tables)", font_size=7.5)
@@ -27,7 +27,7 @@ def fill_doc(path):
         t0 = doc.tables[0]
         set_cell(t0.cell(1, 0), "Team 24 / Lab L1", font_size=8.0)
         set_cell(t0.cell(1, 1), "Vedansh Singh (2024A3PS0432H)\nYashavanth (2024A7PS0006H)\nRashi Tripathi (2024A3PS0412H)\nPrashant Kadam (2024A3PS0411H)", font_size=7.5)
-        set_cell(t0.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: cc10e8c | Git Tag: final", font_size=7.5)
+        set_cell(t0.cell(1, 2), "https://github.com/vedanshehe/Karthub.git\nCommit: 438ecb4 | Git Tag: final", font_size=7.5)
 
         t1 = doc.tables[1]
         set_cell(t1.cell(1, 0), "PostgreSQL 16 (pgcrypto, pg_trgm), Node.js/Express, React 18, Tailwind CSS, Vite", font_size=7.5)
