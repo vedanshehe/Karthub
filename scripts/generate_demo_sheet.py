@@ -90,7 +90,7 @@ def build_pdf(filename="Demo_Sheet.pdf"):
         [
             Paragraph("<b>Team ID / Lab Section:</b><br/>Team 24 / CS F212 Lab", tbl_body),
             Paragraph("<b>Members (Names & IDs):</b><br/>Vedansh Singh (2024A3PS0432H)<br/>Yashavanth (2024A7PS0006H)<br/>Rashi Tripathi (2024A3PS0412H)<br/>Prashant Kadam (2024A3PS0411H)", tbl_body),
-            Paragraph("<b>GitHub Repository & Final Commit:</b><br/>https://github.com/vedanshehe/Karthub.git<br/><b>Commit Hash:</b> 3dc56dc (Tag: <code>final</code>)", tbl_body),
+            Paragraph("<b>GitHub Repository & Final Commit:</b><br/>https://github.com/vedanshehe/Karthub.git<br/><b>Commit Hash:</b> 00c47ba (Tag: <code>final</code>)", tbl_body),
         ],
         [
             Paragraph("<b>RDBMS & Technology Stack:</b><br/>PostgreSQL 16, Node.js/Express (Raw SQL, Zero-ORM), React 18 / Vite 5", tbl_body),

@@ -11,7 +11,7 @@
 | **Team ID / Lab Section** | **Team 24** / CS F212 Lab |
 | **Members (Names & IDs)** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) |
 | **GitHub Repository** | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git) |
-| **Final Commit Hash** | `3dc56dc` (Git Tag: `final`) |
+| **Final Commit Hash** | `00c47ba` (Git Tag: `final`) |
 | **RDBMS & Stack** | **PostgreSQL 16**, Node.js 22 / Express 4 (Raw SQL, Zero-ORM), React 18 / Vite 5 |
 | **Number of Tables** | **12 tables** (Schema `karthub`) |
 | **Total Database Records** | **1,163 valid demo records** (Verified via `db/setup.sql`) |

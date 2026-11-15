@@ -24,7 +24,7 @@ The database design is the architectural foundation of the project: all business
 | Deliverable | Format | Location / Link | Description |
 |---|---|---|---|
 | **GitHub Repository** | Git Repo | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git) | Complete source code, database scripts, zero-ORM backend, and React UI. |
-| **Final Submission Commit** | Git Tag | Tag: `final` · Commit: `3dc56dc` | Submitted version evaluated for in-lab demo and viva. |
+| **Final Submission Commit** | Git Tag | Tag: `final` · Commit: `00c47ba` | Submitted version evaluated for in-lab demo and viva. |
 | **Database Design Document** | PDF (5 Pages) | [Database_Design_Document.pdf](Database_Design_Document.pdf) · [docs/Database_Design_Document.md](docs/Database_Design_Document.md) | Problem statement, workflows, EER model, 12-table schema, normalization (BCNF/3NF), indexing benchmarks. |
 | **Demo Sheet** | PDF (1 Page) | [Demo_Sheet.pdf](Demo_Sheet.pdf) · [docs/Demo_Sheet.md](docs/Demo_Sheet.md) | 1-page CS F212 official template with workflows, non-trivial queries (Q1–Q5), and DBMS features with line numbers. |
 
