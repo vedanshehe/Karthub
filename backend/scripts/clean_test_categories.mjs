@@ -1,32 +1,25 @@
 import { query, pool } from '../src/db.js';
 
-async function main() {
-  console.log('Finding test categories...');
+export async function cleanTestCategories() {
   const catRes = await query("SELECT category_id, name FROM category WHERE category_id > 20 OR name LIKE 'EdgeCat%' OR name LIKE 'S3Cat%' OR name LIKE 'TestCat%'");
-  console.log(`Found ${catRes.rowCount} test categories.`);
   const catIds = catRes.rows.map(r => r.category_id);
 
   if (catIds.length === 0) {
-    console.log('No test categories found.');
-    await pool.end();
     return;
   }
 
   // Find products under these categories
   const prodRes = await query('SELECT product_id, name FROM product WHERE category_id = ANY($1::int[])', [catIds]);
-  console.log(`Found ${prodRes.rowCount} test products.`);
   const prodIds = prodRes.rows.map(r => r.product_id);
 
   if (prodIds.length > 0) {
     // Find listings for these products
     const listRes = await query('SELECT listing_id FROM listing WHERE product_id = ANY($1::int[])', [prodIds]);
-    console.log(`Found ${listRes.rowCount} test listings.`);
     const listIds = listRes.rows.map(r => r.listing_id);
 
     if (listIds.length > 0) {
       // Find order items for these listings
       const oiRes = await query('SELECT order_id, item_no FROM order_item WHERE listing_id = ANY($1::int[])', [listIds]);
-      console.log(`Found ${oiRes.rowCount} test order items.`);
       const orderIds = [...new Set(oiRes.rows.map(r => r.order_id))];
 
       // Delete reviews for these order items
@@ -35,8 +28,7 @@ async function main() {
       }
 
       // Delete order items
-      const oiDel = await query('DELETE FROM order_item WHERE listing_id = ANY($1::int[])', [listIds]);
-      console.log(`Deleted ${oiDel.rowCount} test order items.`);
+      await query('DELETE FROM order_item WHERE listing_id = ANY($1::int[])', [listIds]);
 
       // Delete orders that now have no items
       for (const oId of orderIds) {
@@ -48,23 +40,23 @@ async function main() {
       }
 
       // Delete cart items
-      const ciDel = await query('DELETE FROM cart_item WHERE listing_id = ANY($1::int[])', [listIds]);
-      console.log(`Deleted ${ciDel.rowCount} cart items on test listings.`);
+      await query('DELETE FROM cart_item WHERE listing_id = ANY($1::int[])', [listIds]);
 
       // Delete listings
-      const lDel = await query('DELETE FROM listing WHERE listing_id = ANY($1::int[])', [listIds]);
-      console.log(`Deleted ${lDel.rowCount} test listings.`);
+      await query('DELETE FROM listing WHERE listing_id = ANY($1::int[])', [listIds]);
     }
 
     // Delete products
-    const pDel = await query('DELETE FROM product WHERE product_id = ANY($1::int[])', [prodIds]);
-    console.log(`Deleted ${pDel.rowCount} test products.`);
+    await query('DELETE FROM product WHERE product_id = ANY($1::int[])', [prodIds]);
   }
 
   // Delete categories
-  const cDel = await query('DELETE FROM category WHERE category_id = ANY($1::int[])', [catIds]);
-  console.log(`Deleted ${cDel.rowCount} test categories.`);
+  await query('DELETE FROM category WHERE category_id = ANY($1::int[])', [catIds]);
+}
 
+async function main() {
+  console.log('Finding test categories...');
+  await cleanTestCategories();
   console.log('Cleanup complete!');
   
   // Verify remaining categories
@@ -75,7 +67,9 @@ async function main() {
   await pool.end();
 }
 
-main().catch(err => {
-  console.error('Error during cleanup:', err);
-  process.exit(1);
-});
+if (process.argv[1] && process.argv[1].endsWith('clean_test_categories.mjs')) {
+  main().catch(err => {
+    console.error('Error during cleanup:', err);
+    process.exit(1);
+  });
+}

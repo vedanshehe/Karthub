@@ -1,5 +1,6 @@
 // Extensive Edge Cases & "Removing Till Empty" Test Suite for KartHub
 import { strict as assert } from 'assert';
+import { cleanTestCategories } from '../scripts/clean_test_categories.mjs';
 
 const BASE = process.env.API_URL || 'http://localhost:4000/api';
 const sfx = Date.now();
@@ -448,6 +449,9 @@ async function run() {
   const emptyCat = (await call('POST', '/admin/categories', adminToken, { name: `EmptyCat-${sfx}` })).body;
   const delEmptyCat = await call('DELETE', `/admin/categories/${emptyCat.category_id}`, adminToken);
   check('Deleting empty category succeeds (200)', delEmptyCat.status === 200);
+
+  // Auto-clean test categories to keep database pristine
+  await cleanTestCategories();
 
   console.log(`\n==============================================`);
   console.log(`EXTENSIVE EDGE CASE TESTS SUMMARY:`);

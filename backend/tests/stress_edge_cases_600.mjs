@@ -2,6 +2,7 @@
 // Verifies all business logic, boundary conditions, "draining till empty", RBAC, and constraints.
 
 import { strict as assert } from 'assert';
+import { cleanTestCategories } from '../scripts/clean_test_categories.mjs';
 
 const BASE = process.env.API_URL || 'http://localhost:4000/api';
 const sfx = Date.now();
@@ -1017,6 +1018,9 @@ async function run() {
   // Purge category now that all its products are removed
   const delPurgeCat = await call('DELETE', `/admin/categories/${purgeCat}`, adminToken);
   check('Purged empty category after all its products were removed (200)', delPurgeCat.status === 200);
+
+  // Auto-clean test categories to keep database pristine
+  await cleanTestCategories();
 
   console.log('\n================================================================');
   console.log(`  COMPREHENSIVE TEST SUITE COMPLETE!`);
