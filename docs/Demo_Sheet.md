@@ -8,7 +8,7 @@ Complete before the lab demo. Submit as a single-page PDF. List source-file path
 
 | Team ID / Lab section | Members (names and IDs) | GitHub repository / final commit hash |
 |---|---|---|
-| **Team 24 / Lab L1** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)<br/>Commit: `b61e65e` \| Git Tag: `final` |
+| **Team 24 / Lab L1** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)<br/>Commit: `449ea13` \| Git Tag: `final` |
 
 | RDBMS and technology stack | Number of tables | Total database records |
 |---|---|---|
