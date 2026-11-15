@@ -67,7 +67,7 @@ def generate_perfect_4page(output_docx):
 
     p_sub = doc.add_paragraph()
     p_sub.paragraph_format.space_before = Pt(0); p_sub.paragraph_format.space_after = Pt(3.5)
-    r_sub = p_sub.add_run("Course Project Database Design Document | CS F212 DBMS | Team 24 (Lab L1) | Tag: final (commit 5090ede) | 1,530 Seed Records")
+    r_sub = p_sub.add_run("Course Project Database Design Document | CS F212 DBMS | Team 24 (Lab L1) | Tag: final (commit b61e65e) | 1,530 Seed Records")
     r_sub.font.name = "Calibri"; r_sub.font.size = Pt(8.5); r_sub.font.color.rgb = RGBColor(0x47, 0x55, 0x69)
 
     # 1. Introduction & Application Context

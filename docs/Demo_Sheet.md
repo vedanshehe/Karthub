@@ -8,11 +8,11 @@ Complete before the lab demo. Submit as a single-page PDF. List source-file path
 
 | Team ID / Lab section | Members (names and IDs) | GitHub repository / final commit hash |
 |---|---|---|
-| **Team 24 / Lab L1** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)<br/>Git Tag: `final` |
+| **Team 24 / Lab L1** | • **Vedansh Singh** (2024A3PS0432H)<br/>• **Yashavanth** (2024A7PS0006H)<br/>• **Rashi Tripathi** (2024A3PS0412H)<br/>• **Prashant Kadam** (2024A3PS0411H) | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git)<br/>Commit: `b61e65e` \| Git Tag: `final` |
 
 | RDBMS and technology stack | Number of tables | Total database records |
 |---|---|---|
-| PostgreSQL 16 (pgcrypto, pg_trgm), Node.js/Express, React 18, Tailwind CSS, Vite | 12 tables (BCNF normalized; address 2NF justified) | 1,163 records (seeded across 12 tables) |
+| PostgreSQL 16 (pgcrypto, pg_trgm), Node.js/Express, React 18, Tailwind CSS, Vite | 12 tables (BCNF normalized; address 2NF justified) | 1,530 records (seeded across 12 tables) |
 
 ---
 
