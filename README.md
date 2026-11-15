@@ -15,7 +15,7 @@ The database design is the architectural foundation of the project: all business
 | Vedansh Singh | 2024A3PS0432H |
 | Yashavanth | 2024A7PS0006H |
 | Rashi Tripathi | 2024A3PS0412H |
-| Prashant Kadam | 2024A3PS0411H |
+| Prashant Kadam | 2024A3PS0362H |
 
 ---
 
