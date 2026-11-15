@@ -15,7 +15,18 @@ The database design is the architectural foundation of the project: all business
 | Vedansh Singh | 2024A3PS0432H |
 | Yashavanth | 2024A7PS0006H |
 | Rashi Tripathi | 2024A3PS0412H |
-| Prashant Kadam | *(add ID)* |
+| Prashant Kadam | 2024A3PS0411H |
+
+---
+
+## Final Submission Deliverables (CS F212)
+
+| Deliverable | Format | Location / Link | Description |
+|---|---|---|---|
+| **GitHub Repository** | Git Repo | [https://github.com/vedanshehe/Karthub.git](https://github.com/vedanshehe/Karthub.git) | Complete source code, database scripts, zero-ORM backend, and React UI. |
+| **Final Submission Commit** | Git Tag | Tag: `final` · Commit: `3dc56dc` | Submitted version evaluated for in-lab demo and viva. |
+| **Database Design Document** | PDF (5 Pages) | [Database_Design_Document.pdf](Database_Design_Document.pdf) · [docs/Database_Design_Document.md](docs/Database_Design_Document.md) | Problem statement, workflows, EER model, 12-table schema, normalization (BCNF/3NF), indexing benchmarks. |
+| **Demo Sheet** | PDF (1 Page) | [Demo_Sheet.pdf](Demo_Sheet.pdf) · [docs/Demo_Sheet.md](docs/Demo_Sheet.md) | 1-page CS F212 official template with workflows, non-trivial queries (Q1–Q5), and DBMS features with line numbers. |
 
 ---
 
@@ -45,6 +56,8 @@ The database design is the architectural foundation of the project: all business
 ```
 karthub/
 ├── README.md                           Project overview, setup, architecture, and testing guide
+├── Database_Design_Document.pdf        Official 5-Page Database Design Document (PDF submission)
+├── Demo_Sheet.pdf                      Official 1-Page Demo Sheet (PDF submission template)
 ├── .gitignore                          Ignores node_modules, .env, and build artifacts
 ├── db/
 │   ├── schema.sql                      12 tables, indexes, v_order_total view, triggers
@@ -66,7 +79,7 @@ karthub/
 │   │   ├── errors.js                   HttpError class and wrap() async handler
 │   │   └── routes/                     auth, catalogue, cart, orders, seller, reviews, addresses, admin
 │   └── tests/
-│       ├── smoke.mjs                   56 integration smoke checks covering full user/seller/admin lifecycles
+│       ├── smoke.mjs                   59 integration smoke checks covering full user/seller/admin lifecycles
 │       ├── edge_cases.mjs              68 edge case checks (drain-to-empty, zero stock, cascade/restrict)
 │       └── stress_edge_cases_600.mjs   604 automated fuzzing, boundary, and concurrency test cases
 ├── frontend/
@@ -78,6 +91,8 @@ karthub/
 │       └── pages/                      Shop, Auth, Cart, Orders, Seller, Admin
 └── docs/
     ├── API.md                          Complete REST API specification and request/response contracts
+    ├── Database_Design_Document.md     Full Markdown text of the 5-page Database Design Document
+    ├── Demo_Sheet.md                   Full Markdown text of the 1-page CS F212 Demo Sheet
     └── explain_results.txt             Recorded EXPLAIN ANALYZE query plans and index benchmarks
 ```
 
