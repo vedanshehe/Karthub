@@ -221,9 +221,15 @@ function Listings() {
                 placeholder="Search catalogue by name or brand..."
                 value={catSearch}
                 onChange={e => setCatSearch(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchCatalogue();
+                  }
+                }}
                 style={{ flex: 1 }}
               />
-              <button type="button" onClick={searchCatalogue}>
+              <button type="button" className="btn btn-primary" onClick={searchCatalogue}>
                 Search
               </button>
             </div>

@@ -451,12 +451,22 @@ export function Product({ user }) {
   const [quantities, setQuantities] = useState({});
   const [msg, run, busy] = useAct();
 
-  const handleQtyChange = (listingId, val) => {
-    setQuantities(prev => ({ ...prev, [listingId]: Math.max(1, parseInt(val, 10) || 1) }));
+  const handleQtyChange = (listingId, val, maxStock) => {
+    const parsed = Math.max(1, parseInt(val, 10) || 1);
+    const capped = maxStock ? Math.min(parsed, maxStock) : parsed;
+    setQuantities(prev => ({ ...prev, [listingId]: capped }));
   };
 
   const addToCart = (offer) => {
     const qty = quantities[offer.listing_id] || 1;
+    if (offer.stock_qty <= 0) {
+      alert('This listing is currently out of stock.');
+      return;
+    }
+    if (qty > offer.stock_qty) {
+      alert(`Cannot add ${qty} units. Only ${offer.stock_qty} unit(s) available in stock.`);
+      return;
+    }
     run(
       () => api('/cart', { method: 'PUT', body: { listing_id: offer.listing_id, quantity: qty } }),
       `Added ${qty} unit(s) from ${offer.store_name} to cart!`
@@ -590,7 +600,7 @@ export function Product({ user }) {
                                   value={quantities[o.listing_id] || 1}
                                   min={1}
                                   max={o.stock_qty}
-                                  onChange={v => handleQtyChange(o.listing_id, v)}
+                                  onChange={v => handleQtyChange(o.listing_id, v, o.stock_qty)}
                                   disabled={busy}
                                 />
                                 <button

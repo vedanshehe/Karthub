@@ -61,8 +61,11 @@ function Nav({ user, onLogout }) {
                 {user.full_name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <span style={{ fontWeight: 600 }}>{user.full_name}</span>
-              <span className={`badge ${user.role === 'admin' ? 'badge-danger' : user.role === 'seller' ? 'badge-info' : 'badge-neutral'}`} style={{ fontSize: '0.68rem', padding: '1px 6px' }}>
-                {user.role}
+              <span
+                className={`badge ${user.role === 'admin' ? 'badge-danger' : user.role === 'seller' ? 'badge-info' : 'badge-neutral'}`}
+                style={{ fontSize: '0.68rem', padding: '2px 8px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em' }}
+              >
+                {user.role?.toUpperCase()}
               </span>
             </div>
             <button type="button" className="btn-logout" onClick={onLogout}>
